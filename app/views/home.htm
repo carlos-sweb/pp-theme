@@ -1,0 +1,7 @@
+<include href="header.htm" />
+<include href="wp/menu.htm" />   
+<include if="{{ is_page() }}" href="wp/page.htm" />
+<include if="{{ is_category() }}" href="wp/category.htm" />
+<include if="{{ is_single() }}" href="wp/single.htm" />
+<include if="{{ is_search() }}" href="wp/search.htm" /> 
+<include href="footer.htm" />
