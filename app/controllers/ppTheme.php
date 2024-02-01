@@ -1,35 +1,81 @@
 <?php
 
+use Nette\Utils\Strings;
+use Nette\Utils\Html;
+
 class ppTheme{
- 
-    function home($f3){
-       
-         if( function_exists("wp_nav_menu") ){
-             
-            $my_nav = wp_nav_menu(array(
-                "echo"=>false,
-                "container"=>false,                
-                'fallback_cb' => '__return_false',
-                'items_wrap' => '<ul id="%1$s" class="navbar-nav me-auto mb-2 mb-lg-0 %2$s">%3$s</ul>',
-                'depth' => 2,
-                'walker'=>new bootstrap_5_wp_nav_menu_walker()                
-            ));
+    
+    private $filesystem;
+    
+    private $css_links = array(
+        "/node_modules/bootstrap/dist/css/bootstrap.min.css",
+        "/node_modules/@fontsource/jetbrains-mono/100.css",
+        "/node_modules/@fontsource/jetbrains-mono/200.css",
+        "/node_modules/@fontsource/jetbrains-mono/300.css",
+        "/node_modules/@fontsource/jetbrains-mono/400.css",
+        "/node_modules/@fontsource/jetbrains-mono/500.css",
+        "/node_modules/@fontsource/jetbrains-mono/600.css",
+        "/node_modules/@fontsource/jetbrains-mono/700.css",
+        "/node_modules/@fontsource/jetbrains-mono/800.css",
+        "/node_modules/animate.css/animate.min.css"
+    );
 
-         }
-        
-         $f3->set("nav",$my_nav);
+    function __construct(){        
+        $f3 = Base::instance();        
+        $f3->set("css_links",$this->css_links);
+        $path = $f3->get("SERVER.DOCUMENT_ROOT").DIRECTORY_SEPARATOR.$f3->get("UI");
+        $adapter = new League\Flysystem\Local\LocalFilesystemAdapter($path);
+        $this->filesystem = new League\Flysystem\Filesystem($adapter);        
+        add_action('wp_footer',array($this,'wp_footer'));
+        add_action('wp_head', array($this,'wp_head') );        
+   
+    }
 
+    public function render($filename){
+        $f3 = \Base::instance();
+        $view = \View::instance()->render($filename);
+        $minify = $f3->exists("MINIFY") ? $f3->get("MINIFY") : false ;
+        echo !is_user_logged_in() && $minify ? $this->minify($view):$view;        
+    }
 
-         $f3->set("the_content",function(){
-            if ( have_posts() ) :
-                while ( have_posts() ) : the_post();
-                    the_content();
-                endwhile;
-            else :
-                _e( 'Sorry, no posts were found.', 'textdomain' );
-            endif;
-         });
+    public function minify($html) {
+        // Eliminar espacios en blanco y saltos de línea entre las etiquetas
+        $html = preg_replace('/\s+/', ' ', $html);    
+        // Eliminar espacios en blanco antes y después de las etiquetas
+        $html = preg_replace('/\s*<\s*/', '<', $html);
+        $html = preg_replace('/\s*>\s*/', '>', $html);    
+        return $html;
+    } 
+     
+    function wp_head(){
+        $filename = "wp/wp_head.php";
+        try{            
+            if( $this->filesystem->fileExists($filename) ){                
+                $this->render($filename);
+            }
+        }catch( FilesystemException | UnableToCheckExistence $exception ){
+            // If Error create log
+        }
+    }
+    function wp_footer($pass){                
+        $filename = "wp/wp_footer.php";
+        try{            
+            if( $this->filesystem->fileExists($filename) ){
+                $this->render($filename);
+            }
+        }catch( FilesystemException | UnableToCheckExistence $exception ){
+            // If Error create log
+        }
+    }
 
-        echo \Template::instance()->render("home.htm","text/html");
+    function home(){        
+        $filename = "home.php";
+        try{
+            if( $this->filesystem->fileExists($filename) ){
+                $this->render($filename);
+            }
+        }catch( FilesystemException | UnableToCheckExistence $exception ){
+
+        }                                                             
     }
 }

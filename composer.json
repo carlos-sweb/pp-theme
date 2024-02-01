@@ -1,5 +1,9 @@
 {
     "require": {
-        "bcosca/fatfree-core": "^3.8"
+        "bcosca/fatfree-core": "^3.8",
+        "symfony/yaml": "^7.0",
+        "league/flysystem": "^3.0",
+        "latte/latte": "^3.0",
+        "nette/utils": "^4.0"
     }
 }
